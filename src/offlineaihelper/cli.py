@@ -128,3 +128,27 @@ def moderate(text: str, env: str) -> None:
     except Exception as exc:  # noqa: BLE001
         click.secho(f"Unexpected error: {exc}", fg="red", err=True)
         sys.exit(1)
+
+
+@main.command("serve")
+@click.option("--host", default="127.0.0.1", show_default=True, help="Bind host.")
+@click.option("--port", default=11435, show_default=True, type=int, help="Bind port.")
+@click.option("--env", default=".env", show_default=True, help="Path to .env file.")
+def serve(host: str, port: int, env: str) -> None:
+    """Start the FastAPI HTTP server (used by the Node.js CLI layer)."""
+    from dotenv import load_dotenv
+    import os
+    load_dotenv(dotenv_path=env, override=False)
+    os.environ.setdefault("API_HOST", host)
+    os.environ.setdefault("API_PORT", str(port))
+    try:
+        from offlineaihelper.server import run_server
+        run_server()
+    except ImportError:
+        click.secho(
+            "Error: fastapi and uvicorn are required for the server. "
+            "Install with: pip install 'offlineaihelper[server]'",
+            fg="red",
+            err=True,
+        )
+        sys.exit(1)

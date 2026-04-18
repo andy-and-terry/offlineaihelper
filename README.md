@@ -1,227 +1,130 @@
 # offlineaihelper
 
-> An offline-first AI assistant with a multi-stage content moderation pipeline, powered by [Ollama](https://ollama.com).
+An offline AI assistant with a strict built-in moderation pipeline, powered by [Ollama](https://ollama.com).
 
----
-
-## Table of Contents
-
-- [Project Description](#project-description)
-- [Architecture Overview](#architecture-overview)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Development](#development)
-- [Moderation Pipeline](#moderation-pipeline)
-- [Models](#models)
-
----
-
-## Project Description
-
-`offlineaihelper` is a fully offline, privacy-respecting AI assistant that runs entirely on your local machine.
-It wraps [Ollama](https://ollama.com) to provide:
-
-- **Conversational AI** via a small, fast local LLM (default: `llama3.2:3b`).
-- **Automatic content moderation** at both the input and output stages using a combination of fast deterministic rules and an LLM-based safety classifier (`llama-guard3:1b`).
-- **Auditable decisions** — every moderation event is logged with a structured record and a decision code.
-- **Configurable policy** — strict / fail-closed mode, per-stage toggles, and customisable rule categories.
-
----
-
-## Architecture Overview
+## Architecture
 
 ```
-User prompt
-     │
-     ▼
-┌──────────────────────────────┐
-│  Pre-check (stage="pre")     │
-│  1. DeterministicChecker     │  ← regex rules (violence, PII, injection, …)
-│  2. LLMModerator             │  ← llama-guard3:1b via Ollama
-└──────────────┬───────────────┘
-               │ ALLOW
-               ▼
-┌──────────────────────────────┐
-│  OllamaClient.generate()     │  ← llama3.2:3b
-└──────────────┬───────────────┘
-               │ generated response
-               ▼
-┌──────────────────────────────┐
-│  Post-check (stage="post")   │  ← same deterministic rules on the response
-└──────────────┬───────────────┘
-               │ ALLOW
-               ▼
-          AppResponse
+┌──────────────────────────────────────────────────────┐
+│  Node.js CLI  (node/src/cli.js)                      │
+│  Commands: ask · moderate · check-models · health    │
+└───────────────────┬──────────────────────────────────┘
+                    │ HTTP (localhost:11435)
+┌───────────────────▼──────────────────────────────────┐
+│  Python FastAPI Server  (src/offlineaihelper/server) │
+│  POST /ask · POST /moderate · GET /models            │
+│                                                      │
+│  ┌─────────────────────────────────────────────────┐ │
+│  │  Moderation Pipeline                            │ │
+│  │  Pre-check → Generate → Post-check              │ │
+│  │  Deterministic rules + LLM moderator            │ │
+│  └────────────────────┬────────────────────────────┘ │
+└───────────────────────┼──────────────────────────────┘
+                        │ HTTP (localhost:11434)
+┌───────────────────────▼──────────────────────────────┐
+│  Ollama  (llama3.2:3b assistant + llama-guard3:1b)   │
+└──────────────────────────────────────────────────────┘
 ```
-
-Key modules:
-
-| Module | Responsibility |
-|--------|---------------|
-| `offlineaihelper.ollama.client` | Async HTTP client for Ollama with retry logic |
-| `offlineaihelper.moderation.deterministic_rules` | Fast regex-based content scanner |
-| `offlineaihelper.moderation.llm_moderator` | LLM-powered safety classifier |
-| `offlineaihelper.moderation.policy_engine` | Orchestrates pre/post checks and audit logging |
-| `offlineaihelper.routing.model_router` | Resolves model aliases, checks availability |
-| `offlineaihelper.app` | Top-level pipeline: pre-check → generate → post-check |
-| `offlineaihelper.cli` | Click-based command-line interface |
-
----
 
 ## Prerequisites
 
-- **Python 3.11+**
-- **[Ollama](https://ollama.com)** installed and running (`ollama serve`)
-- ~400 MB free disk space for the `llama-guard3:1b` moderation model, plus space for the assistant model
-
----
+- Python 3.11+
+- Node.js 18+
+- [Ollama](https://ollama.com) installed and running
 
 ## Installation
 
-### Automated (Windows PowerShell)
-
 ```powershell
-# From the repo root
+# Windows (PowerShell)
 ./install.ps1
 ```
 
-The script:
-1. Verifies Python ≥ 3.11 and a running Ollama server.
-2. Installs the package with dev dependencies via `pip install -e ".[dev]"`.
-3. Pulls the required Ollama models.
-
-### Manual
-
+Or manually:
 ```bash
-# 1. Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate      # Linux / macOS
-# .venv\Scripts\Activate.ps1  # Windows
-
-# 2. Install runtime dependencies
-pip install -r requirements.txt
-
-# 3. (Optional) install dev dependencies
-pip install -r requirements-dev.txt
-
-# 4. Install the package itself
-pip install -e .
-
-# 5. Pull Ollama models
-ollama pull llama3.2:3b
-ollama pull llama-guard3:1b
-
-# 6. Copy the example env file
-cp .env.example .env
+pip install -e ".[dev]"
+cd node && npm install
 ```
-
----
 
 ## Configuration
 
-### `.env`
-
-Copy `.env.example` to `.env` and adjust:
+Copy `.env.example` to `.env` and adjust as needed:
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+|---|---|---|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `MODERATION_POLICY_PATH` | `config/moderation.policy.json` | Moderation policy file |
-| `MODELS_CONFIG_PATH` | `config/models.json` | Model routing config |
-| `MODERATION_STRICT_MODE` | `true` | Block on errors/timeouts when `true` |
-| `OLLAMA_TIMEOUT_SECONDS` | `30` | Per-request timeout |
-| `OLLAMA_MODERATION_RETRIES` | `2` | Retry attempts on timeout/5xx |
-
-### `config/moderation.policy.json`
-
-Controls which moderation stages are active, which rule categories are checked, and audit settings.
-
-### `config/models.json`
-
-Maps the `assistant` and `moderator` aliases to real Ollama model names.
-
----
+| `API_HOST` | `127.0.0.1` | Python API server bind host |
+| `API_PORT` | `11435` | Python API server port |
+| `MODERATION_STRICT_MODE` | `true` | Block on moderation errors |
+| `OLLAMA_TIMEOUT_SECONDS` | `30` | Per-request Ollama timeout |
 
 ## Usage
 
-```bash
-# Ask the assistant a question
-offlineaihelper ask --prompt "Explain quantum entanglement in simple terms"
+### Start the Python API server
 
-# Check which configured models are available on your Ollama server
+```bash
+offlineaihelper serve
+# or
+python -m offlineaihelper.server
+```
+
+### Node.js CLI
+
+```bash
+# Ask the assistant
+node node/src/cli.js ask --prompt "What is the capital of France?"
+
+# Moderate a piece of text
+node node/src/cli.js moderate --text "Hello, how are you?"
+
+# Check which models are available
+node node/src/cli.js check-models
+
+# Verify the server is running
+node node/src/cli.js health
+```
+
+### Python CLI (direct, no server needed)
+
+```bash
+offlineaihelper ask --prompt "Hello!"
+offlineaihelper moderate --text "Test text"
 offlineaihelper check-models
-
-# Run just the moderation pipeline on a piece of text
-offlineaihelper moderate --text "Hello, how are you?"
 ```
-
-All commands accept `--env PATH` to point to a custom `.env` file.
-
----
-
-## Development
-
-### Running tests
-
-```bash
-# Using pytest (recommended)
-pytest
-
-# Using unittest discover (no extra tools required)
-python -m unittest discover -s tests -v
-```
-
-All tests are fully mocked — **no running Ollama daemon required**.
-
-### Project structure
-
-```
-src/offlineaihelper/
-├── __init__.py
-├── app.py                     # OfflineAIHelper + create_app()
-├── cli.py                     # Click CLI
-├── ollama/
-│   └── client.py              # OllamaClient
-├── moderation/
-│   ├── audit.py               # AuditLogger + ModerationEvent + DecisionCode
-│   ├── deterministic_rules.py # DeterministicChecker
-│   ├── llm_moderator.py       # LLMModerator
-│   ├── policy_engine.py       # ModerationPolicyEngine
-│   └── rule_sets/
-│       └── default.json       # Built-in keyword/regex rules
-└── routing/
-    └── model_router.py        # ModelRouter
-```
-
----
 
 ## Moderation Pipeline
 
-Each request passes through up to three checks:
+Every request passes through three stages:
 
-1. **Deterministic pre-check** — scans the user prompt against regex-based rule sets (violence, self-harm, explicit content, PII, prompt injection). Fast, requires no network.
-2. **LLM pre-check** — sends the prompt to `llama-guard3:1b` which returns `{"safe": bool, "category": ..., "reason": ...}`. Skipped if Ollama is unavailable and `strict_mode=false`.
-3. **Deterministic post-check** — same rule sets applied to the generated *response* before it reaches the user.
+1. **Pre-check** — fast deterministic regex rules (violence, self-harm, PII, injection patterns)
+2. **LLM check** — `llama-guard3:1b` (~400 MB) evaluates the prompt via Ollama
+3. **Post-check** — same deterministic rules applied to the generated response
 
-Decision codes:
+Decision codes: `ALLOW` · `BLOCK_DETERMINISTIC` · `BLOCK_LLM` · `BLOCK_POST` · `ERROR_FAIL_CLOSED`
 
-| Code | Meaning |
-|------|---------|
-| `ALLOW` | All checks passed |
-| `BLOCK_DETERMINISTIC` | Caught by regex rules at pre-check |
-| `BLOCK_LLM` | Flagged unsafe by the LLM classifier |
-| `BLOCK_POST` | Generated response caught by post-check |
-| `ERROR_FAIL_CLOSED` | Moderation error in strict mode |
-
----
+In `strict_mode=true` (default), any moderation error blocks the request.
 
 ## Models
 
-| Alias | Ollama model | Size | Purpose |
-|-------|-------------|------|---------|
-| `assistant` | `llama3.2:3b` | ~2 GB | Main conversational assistant |
-| `moderator` | `llama-guard3:1b` | ~400 MB | Content safety classifier |
+| Alias | Model | Size | Purpose |
+|---|---|---|---|
+| assistant | `llama3.2:3b` | ~2 GB | Main assistant |
+| moderator | `llama-guard3:1b` | ~400 MB | Content safety |
 
-`llama-guard3:1b` is Meta's Llama Guard 3 model, fine-tuned specifically for content safety classification. At ~400 MB it is fast enough for real-time pre/post checks while remaining fully offline.
+## Development
+
+### Run Python tests
+```bash
+python -m unittest discover -s tests -v
+# or
+pytest
+```
+
+### Run Node.js tests
+```bash
+cd node && npm test
+```
+
+### Run all tests
+```bash
+python -m unittest discover -s tests -v && cd node && npm test
+```

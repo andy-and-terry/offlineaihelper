@@ -87,6 +87,43 @@ try {
 }
 
 # ---------------------------------------------------------------------------
+# 3b. Install Node.js dependencies
+# ---------------------------------------------------------------------------
+Write-Step "Installing Node.js dependencies"
+
+$nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+if (-not $nodeCmd) {
+    Write-Failure "Node.js not found. Install Node.js 18+ from https://nodejs.org and re-run."
+    exit 1
+}
+$nodeVersion = & node --version 2>&1
+Write-Success "Node.js $nodeVersion found"
+
+$npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+if (-not $npmCmd) {
+    Write-Failure "npm not found. Install Node.js 18+ from https://nodejs.org and re-run."
+    exit 1
+}
+
+$nodeDir = Join-Path $PSScriptRoot "node"
+if (Test-Path $nodeDir) {
+    Push-Location $nodeDir
+    try {
+        & npm install --silent
+        if ($LASTEXITCODE -ne 0) {
+            Write-Failure "npm install failed"
+            exit 1
+        }
+        Write-Success "Node.js dependencies installed"
+    } finally {
+        Pop-Location
+    }
+} else {
+    Write-Failure "node/ directory not found at $nodeDir"
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
 # 4. Pull Ollama models
 # ---------------------------------------------------------------------------
 Write-Step "Pulling Ollama models"
@@ -108,5 +145,6 @@ if (Test-Path $pullScript) {
 # ---------------------------------------------------------------------------
 Write-Host "`n================================================" -ForegroundColor Green
 Write-Host "  offlineaihelper installed successfully!" -ForegroundColor Green
-Write-Host "  Run: offlineaihelper ask --prompt 'Hello!'" -ForegroundColor Green
+Write-Host "  Run (Python CLI):  offlineaihelper ask --prompt 'Hello!'" -ForegroundColor Green
+Write-Host "  Run (Node.js CLI): node node/src/cli.js ask --prompt 'Hello!'" -ForegroundColor Green
 Write-Host "================================================`n" -ForegroundColor Green

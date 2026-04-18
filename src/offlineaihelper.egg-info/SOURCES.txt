@@ -3,6 +3,7 @@ pyproject.toml
 src/offlineaihelper/__init__.py
 src/offlineaihelper/app.py
 src/offlineaihelper/cli.py
+src/offlineaihelper/server.py
 src/offlineaihelper.egg-info/PKG-INFO
 src/offlineaihelper.egg-info/SOURCES.txt
 src/offlineaihelper.egg-info/dependency_links.txt
