@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "offlineaihelper"
+version = "0.1.0"
+description = "Offline AI assistant with built-in moderation pipeline powered by Ollama"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+    "click>=8.1",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.29",
+]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.111", "uvicorn[standard]>=0.29"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "respx>=0.21", "httpx>=0.27", "fastapi>=0.111", "uvicorn[standard]>=0.29"]
+
+[project.scripts]
+offlineaihelper = "offlineaihelper.cli:main"
+offlineaihelper-server = "offlineaihelper.server:run_server"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

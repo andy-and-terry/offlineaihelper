@@ -1,0 +1,31 @@
+{
+  "name": "offlineaihelper",
+  "version": "0.1.0",
+  "description": "Node.js CLI for the offlineaihelper Python API server",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "oah": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --forceExit",
+    "lint": "node --input-type=module -e \"import('./src/index.js')\""
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "nock": "^13.5.0",
+    "@jest/globals": "^29.0.0"
+  },
+  "jest": {
+    "transform": {},
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,4 +1,13 @@
 {
+  "ollama_base_url": "${OLLAMA_BASE_URL}",
+  "assistant": {
+    "alias": "assistant",
+    "ollama_model": "llama3.2:3b"
+  },
+  "moderator": {
+    "alias": "moderator",
+    "ollama_model": "llama-guard3:1b"
+  },
   "models": {
     "moderation": "gemma3:1b",
     "chat": "gemma3:1b",

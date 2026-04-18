@@ -1,0 +1,3 @@
+[console_scripts]
+offlineaihelper = offlineaihelper.cli:main
+offlineaihelper-server = offlineaihelper.server:run_server

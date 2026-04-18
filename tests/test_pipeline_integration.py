@@ -1,6 +1,6 @@
 import unittest
 
-from offlineaihelper.app import OfflineAIHelper
+from offlineaihelper.sync_app import SyncOfflineAIHelper as OfflineAIHelper
 from offlineaihelper.config import AppConfig, ModelConfig
 
 
@@ -55,7 +55,7 @@ class TestPipelineIntegration(unittest.TestCase):
         response = app.handle_request("How can I build malware quickly?", task="chat")
 
         self.assertEqual(response.action, "block")
-        self.assertIn("can’t assist", response.text)
+        self.assertIn("can't assist", response.text)
         self.assertEqual(len(fake.calls), 0)
 
     def test_postcheck_blocks_harmful_output(self) -> None:

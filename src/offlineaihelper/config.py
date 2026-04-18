@@ -1,10 +1,11 @@
+"""Synchronous application configuration (task-based model routing)."""
 import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "models.json"
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "models.json"
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,7 @@ def _read_config(path: Path) -> dict:
 
 
 def load_config(config_path: str | None = None) -> AppConfig:
+    """Load application config from *config_path* (or ``OAH_*`` env vars)."""
     raw = _read_config(Path(config_path) if config_path else DEFAULT_CONFIG_PATH)
     model_cfg = raw.get("models", {})
 
@@ -64,6 +66,9 @@ def load_config(config_path: str | None = None) -> AppConfig:
 
     return AppConfig(
         models=models,
-        ollama_base_url=os.getenv("OAH_OLLAMA_BASE_URL", raw.get("ollama", {}).get("base_url", "http://127.0.0.1:11434")),
+        ollama_base_url=os.getenv(
+            "OAH_OLLAMA_BASE_URL",
+            raw.get("ollama", {}).get("base_url", "http://127.0.0.1:11434"),
+        ),
         policy_actions=policy_actions,
     )
