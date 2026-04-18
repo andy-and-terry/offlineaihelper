@@ -1,0 +1,2 @@
+[console_scripts]
+offlineaihelper = offlineaihelper.cli:main

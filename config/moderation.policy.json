@@ -1,0 +1,29 @@
+{
+  "strict_mode": true,
+  "pre_check": {
+    "enabled": true,
+    "rule_categories": ["violence", "self_harm", "explicit", "pii", "injection"]
+  },
+  "llm_check": {
+    "enabled": true,
+    "model_alias": "moderator",
+    "temperature": 0.0,
+    "max_tokens": 64,
+    "prompt_template": "You are a content safety classifier. Analyze the following text and respond ONLY with a JSON object in this exact format: {\"safe\": true/false, \"category\": \"<category or null>\", \"reason\": \"<brief reason>\"}.\n\nText to analyze:\n{text}"
+  },
+  "post_check": {
+    "enabled": true,
+    "rule_categories": ["violence", "self_harm", "explicit", "pii", "injection"]
+  },
+  "decision_codes": {
+    "ALLOW": "Content passed all moderation checks",
+    "BLOCK_DETERMINISTIC": "Content blocked by deterministic rule match",
+    "BLOCK_LLM": "Content blocked by LLM moderation",
+    "BLOCK_POST": "Generated response blocked by post-check moderation",
+    "ERROR_FAIL_CLOSED": "Moderation error; request blocked (strict mode)"
+  },
+  "audit": {
+    "log_level": "info",
+    "redact_content": true
+  }
+}
