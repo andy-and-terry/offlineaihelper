@@ -67,7 +67,7 @@ async def health() -> HealthResponse:
 @api.post("/ask", response_model=AskResponse)
 async def ask(req: AskRequest) -> AskResponse:
     if _app_instance is None:
-        raise HTTPException(status_code=503, detail="App not initialised")
+        raise HTTPException(status_code=503, detail="App not initialized")
     try:
         result: AppResponse = await _app_instance.handle_request(req.prompt)
     except OllamaUnavailableError as exc:
@@ -82,7 +82,7 @@ async def ask(req: AskRequest) -> AskResponse:
 @api.post("/moderate", response_model=ModerateResponse)
 async def moderate(req: ModerateRequest) -> ModerateResponse:
     if _app_instance is None:
-        raise HTTPException(status_code=503, detail="App not initialised")
+        raise HTTPException(status_code=503, detail="App not initialized")
     try:
         decision = await _app_instance._policy.evaluate(req.text, stage=req.stage)
     except OllamaUnavailableError as exc:
@@ -96,7 +96,7 @@ async def moderate(req: ModerateRequest) -> ModerateResponse:
 @api.get("/models", response_model=ModelsResponse)
 async def models() -> ModelsResponse:
     if _app_instance is None:
-        raise HTTPException(status_code=503, detail="App not initialised")
+        raise HTTPException(status_code=503, detail="App not initialized")
     try:
         available = await _app_instance._client.list_models()
     except OllamaUnavailableError:
