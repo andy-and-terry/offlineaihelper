@@ -19,6 +19,8 @@ CATEGORIES = (
     "safe",
 )
 
+RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
+
 
 @dataclass(frozen=True)
 class ModerationResult:
@@ -109,7 +111,7 @@ class ModerationPipeline:
         if rules_result.requires_confirmation:
             return ModerationResult(
                 category=llm_result.category if llm_result.category != "safe" else rules_result.category,
-                risk=max(llm_result.risk, rules_result.risk, key=lambda item: {"low": 0, "medium": 1, "high": 2}[item]),
+                risk=max(llm_result.risk, rules_result.risk, key=_risk_value),
                 reason=f"{rules_result.reason}; {llm_result.reason}",
                 source="rules+llm",
                 requires_confirmation=True,
@@ -131,3 +133,7 @@ def _extract_json(raw_text: str) -> dict:
             return json.loads(match.group(0))
         except json.JSONDecodeError:
             return {}
+
+
+def _risk_value(value: str) -> int:
+    return RISK_ORDER.get(value, 0)

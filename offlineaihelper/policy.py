@@ -19,7 +19,7 @@ class ModerationPolicy:
         if moderation.requires_confirmation and is_command_context:
             return PolicyDecision(
                 action="allow_with_warning",
-                message="Potentially destructive operation detected. Explain intent and ask user to type 'I confirm' before proceeding.",
+                message="This operation may be destructive. Please confirm by typing 'I confirm' before proceeding.",
             )
 
         if action == "block":
