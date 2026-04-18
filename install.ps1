@@ -2,8 +2,9 @@
 .SYNOPSIS
     Installs offlineaihelper and its dependencies.
 .DESCRIPTION
-    Checks that Python >= 3.11 and Ollama are available, installs the Python
-    package in editable mode with dev extras, and pulls required Ollama models.
+    Installs Ollama if not present, checks Python >= 3.11 and Node.js >= 18,
+    installs the Python package in editable mode with dev extras, installs
+    Node.js dependencies, and pulls required Ollama models.
 #>
 
 [CmdletBinding()]
@@ -17,7 +18,44 @@ function Write-Failure { param([string]$Msg) Write-Host "  [FAIL] $Msg" -Foregro
 function Write-Step    { param([string]$Msg) Write-Host "`n==> $Msg" -ForegroundColor Cyan }
 
 # ---------------------------------------------------------------------------
-# 1. Python >= 3.11 check
+# 1. Ollama — download and install if not already present
+# ---------------------------------------------------------------------------
+Write-Step "Checking for Ollama"
+
+$ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
+if (-not $ollamaCmd) {
+    Write-Host "  Ollama not found. Downloading installer..."
+    $installerPath = Join-Path $env:TEMP "OllamaSetup.exe"
+    Invoke-WebRequest -Uri "https://ollama.com/download/OllamaSetup.exe" -OutFile $installerPath
+    Write-Host "  Running Ollama installer (silent)..."
+    Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
+    $ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
+    if (-not $ollamaCmd) {
+        Write-Failure "Ollama installation did not complete. Install manually from https://ollama.com/download/windows"
+        exit 1
+    }
+}
+Write-Success "Ollama found at $($ollamaCmd.Source)"
+
+try {
+    $ollamaVersion = & ollama --version 2>&1
+    Write-Success "Ollama version: $ollamaVersion"
+} catch {
+    Write-Failure "Could not run 'ollama --version': $_"
+    exit 1
+}
+
+# Check if server is reachable
+try {
+    $null = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 5 -ErrorAction Stop
+    Write-Success "Ollama server is running at http://localhost:11434"
+} catch {
+    Write-Failure "Ollama server not reachable at http://localhost:11434. Start it with 'ollama serve' and re-run."
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# 2. Python >= 3.11 check
 # ---------------------------------------------------------------------------
 Write-Step "Checking Python version"
 
@@ -45,35 +83,6 @@ if ($versionOutput -match 'Python (\d+)\.(\d+)') {
 }
 
 # ---------------------------------------------------------------------------
-# 2. Ollama installed & running
-# ---------------------------------------------------------------------------
-Write-Step "Checking Ollama"
-
-$ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
-if (-not $ollamaCmd) {
-    Write-Failure "Ollama not found. Install from https://ollama.com and re-run."
-    exit 1
-}
-Write-Success "Ollama binary found at $($ollamaCmd.Source)"
-
-try {
-    $ollamaVersion = & ollama --version 2>&1
-    Write-Success "Ollama version: $ollamaVersion"
-} catch {
-    Write-Failure "Could not run 'ollama --version': $_"
-    exit 1
-}
-
-# Check if server is reachable
-try {
-    $response = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -TimeoutSec 5 -ErrorAction Stop
-    Write-Success "Ollama server is running at http://localhost:11434"
-} catch {
-    Write-Failure "Ollama server not reachable at http://localhost:11434. Start it with 'ollama serve' and re-run."
-    exit 1
-}
-
-# ---------------------------------------------------------------------------
 # 3. Install Python package
 # ---------------------------------------------------------------------------
 Write-Step "Installing offlineaihelper[dev]"
@@ -87,7 +96,7 @@ try {
 }
 
 # ---------------------------------------------------------------------------
-# 3b. Install Node.js dependencies
+# 4. Install Node.js dependencies
 # ---------------------------------------------------------------------------
 Write-Step "Installing Node.js dependencies"
 
@@ -124,7 +133,7 @@ if (Test-Path $nodeDir) {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Pull Ollama models
+# 5. Pull Ollama models
 # ---------------------------------------------------------------------------
 Write-Step "Pulling Ollama models"
 
@@ -147,4 +156,5 @@ Write-Host "`n================================================" -ForegroundColor
 Write-Host "  offlineaihelper installed successfully!" -ForegroundColor Green
 Write-Host "  Run (Python CLI):  offlineaihelper ask --prompt 'Hello!'" -ForegroundColor Green
 Write-Host "  Run (Node.js CLI): node node/src/cli.js ask --prompt 'Hello!'" -ForegroundColor Green
+Write-Host "  Programmatic API:  from offlineaihelper import OfflineAIHelper" -ForegroundColor Green
 Write-Host "================================================`n" -ForegroundColor Green
