@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from typing import Dict, Pattern
+from typing import Pattern
 
 from .ollama import OllamaClient
 
@@ -31,7 +31,7 @@ class ModerationResult:
 
 class DeterministicRules:
     def __init__(self) -> None:
-        self._patterns: Dict[str, Pattern[str]] = {
+        self._patterns: dict[str, Pattern[str]] = {
             "self_harm": re.compile(r"\b(self harm|hurt myself|suicide)\b", re.IGNORECASE),
             "violence": re.compile(r"\b(shoot|bomb|stab|murder|attack)\b", re.IGNORECASE),
             "sexual_content": re.compile(r"\b(explicit sex|porn|sexual act|nude)\b", re.IGNORECASE),

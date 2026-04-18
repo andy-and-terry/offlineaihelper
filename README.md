@@ -11,7 +11,7 @@ Offline AI Helper uses local Ollama models only (no embedded model weights). It 
 - Image/SVG: `qwen2.5-coder:7b`
 - Low-end fallback: `qwen2.5:3b`
 
-All model defaults live in `/home/runner/work/offlineaihelper/offlineaihelper/config/models.json` and can be overridden with environment variables.
+All model defaults live in `config/models.json` and can be overridden with environment variables.
 
 ## Safety / moderation behavior
 
