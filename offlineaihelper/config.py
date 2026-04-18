@@ -2,7 +2,6 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
 
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "models.json"
@@ -22,7 +21,7 @@ class ModelConfig:
 class AppConfig:
     models: ModelConfig
     ollama_base_url: str
-    policy_actions: Dict[str, str]
+    policy_actions: dict[str, str]
 
 
 DEFAULT_POLICY_ACTIONS = {

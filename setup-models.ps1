@@ -27,8 +27,7 @@ $models = @(
     $config.models.qa,
     $config.models.image,
     $config.models.low_end
-) | Where-Object { $_ -and $_.Trim().Length -gt 0 } | Select-Object -Unique
-
+) | Where-Object { $_ -ne $null -and $_.Trim().Length -gt 0 } | Select-Object -Unique
 Write-Host "Pulling configured Ollama models..."
 foreach ($model in $models) {
     Write-Host "  ollama pull $model"

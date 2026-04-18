@@ -34,7 +34,7 @@ class ModerationResult:
 class DeterministicRules:
     def __init__(self) -> None:
         self._patterns: dict[str, Pattern[str]] = {
-            "self_harm": re.compile(r"\b(self[_\s]harm|hurt myself|suicide)\b", re.IGNORECASE),
+            "self_harm": re.compile(r"\b(self[_\s-]harm|hurt myself|suicide)\b", re.IGNORECASE),
             "violence": re.compile(r"\b(shoot|bomb|stab|murder|attack)\b", re.IGNORECASE),
             "sexual_content": re.compile(r"\b(explicit sex|porn|sexual act|nude)\b", re.IGNORECASE),
             "hate_harassment": re.compile(r"\b(slur|hate (group|people)|harass|racist attack)\b", re.IGNORECASE),

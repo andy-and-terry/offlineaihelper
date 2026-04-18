@@ -81,7 +81,10 @@ class OfflineAIHelper:
 
 def _safe_refusal(category: str) -> str:
     if category in {"self_harm", "violence"}:
-        return "I can’t help with harm. I can help with safety planning or finding immediate support resources instead."
+        return (
+            "I can’t help with harm. If someone may be in immediate danger, contact local emergency services now. "
+            "I can help with safety planning and finding crisis support resources."
+        )
     if category in {"malware_hacking", "illicit_behavior"}:
         return "I can’t assist with harmful or illegal actions. I can provide defensive, legal alternatives instead."
     if category == "privacy_pii":
