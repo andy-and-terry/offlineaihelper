@@ -1,0 +1,25 @@
+{
+  "models": {
+    "moderation": "gemma3:1b",
+    "chat": "gemma3:1b",
+    "coding": "qwen2.5-coder:7b",
+    "qa": "qwen2.5:7b",
+    "image": "qwen2.5-coder:7b",
+    "low_end": "qwen2.5:3b"
+  },
+  "ollama": {
+    "base_url": "http://127.0.0.1:11434"
+  },
+  "policy": {
+    "actions": {
+      "self_harm": "block",
+      "violence": "allow_with_warning",
+      "sexual_content": "allow_with_warning",
+      "hate_harassment": "block",
+      "illicit_behavior": "block",
+      "malware_hacking": "block",
+      "privacy_pii": "allow_with_warning",
+      "safe": "allow"
+    }
+  }
+}
